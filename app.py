@@ -26,15 +26,13 @@ if "messages" not in st.session_state:
         {
             "role": "assistant",
             "content": (
-                "Halo! Selamat datang di layanan pelanggan Donat Kentang Premium. 🍩\n\n"
-                "Berikut adalah 3 menu utama kami:\n"
+                "Halo! Selamat datang di layanan pelanggan **Donat Kentang Premium** 🍩. "
+                "Kami memiliki cabang yang tersebar di seluruh Indonesia lho!\n\n"
+                "Ada yang bisa kami bantu hari ini? Apakah seputar info cabang terdekat, atau mau intip 3 menu spesial kami:\n"
                 "1. **Donat Meses** - Rp 5.000/pcs\n"
-                "   *(Donat lembut dengan taburan meses dan berbagai pilihan topping)*\n"
                 "2. **Donat Creamy** - Rp 10.000/pcs\n"
-                "   *(Donat lembut dengan isian krim yang manis, creamy, dan lumer di mulut)*\n"
-                "3. **Donat Bomboloni** - Rp 7.000/pcs\n"
-                "   *(Donat lembut tanpa lubang dengan isian krim yang melimpah)*\n\n"
-                "Ada yang bisa saya bantu terkait pemesanan menu di atas, Kak?"
+                "3. **Donat Bomboloni** - Rp 7.000/pcs\n\n"
+                "Silakan tanyakan apa saja, Kak!"
             )
         }
     ]
@@ -51,25 +49,26 @@ if prompt := st.chat_input("Tulis pertanyaan atau pesananmu di sini..."):
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # Proses respons dari Gemini dengan instruksi sistem agar fokus ke 3 menu tersebut
+    # Proses respons dari Gemini dengan instruksi sistem yang lebih luwes
     with st.chat_message("assistant"):
         with st.spinner("Memikirkan jawaban..."):
             try:
                 if not client:
                     response = "Maaf Kak, kunci API Gemini belum dikonfigurasi di Streamlit Secrets."
                 else:
-                    # Instruksi sistem agar bot bertindak sebagai CS Donat Kentang dengan 3 menu spesifik
+                    # Instruksi sistem yang luwes: toko punya cabang di seluruh Indonesia dan fokus ke 3 menu
                     system_instruction = (
                         "Kamu adalah customer service ramah untuk toko 'Donat Kentang Premium'. "
-                        "Kamu HANYA menjual dan membahas 3 menu berikut:\n"
-                        "1. Donat Meses (Rp 5.000/pcs) - camilan lembut dengan taburan meses.\n"
-                        "2. Donat Creamy (Rp 10.000/pcs) - donat dengan isian krim lumer.\n"
-                        "3. Donat Bomboloni (Rp 7.000/pcs) - donat tanpa lubang dengan isian krim melimpah.\n"
-                        "Jika pelanggan bertanya di luar menu ini, arahkan dengan sopan kembali ke 3 menu tersebut. "
-                        "Bantu mereka mencatat pesanan, jumlah, atau menjawab pertanyaan seputar menu ini."
+                        "Toko kita memiliki cabang yang tersebar di seluruh Indonesia. "
+                        "Menu utama yang kita tawarkan ada 3: "
+                        "1. Donat Meses (Rp 5.000/pcs), "
+                        "2. Donat Creamy (Rp 10.000/pcs), "
+                        "3. Donat Bomboloni (Rp 7.000/pcs). "
+                        "Jawab pertanyaan pelanggan dengan ramah, luwes, dan natural. "
+                        "Jika ditanya soal lokasi/cabang, jelaskan bahwa kita punya cabang di berbagai kota di seluruh Indonesia dan bantu arahkan mereka. "
+                        "Bantu juga mereka jika ingin memesan ketiga menu tersebut."
                     )
                     
-                    # Mengirim prompt beserta konteks sistem menggunakan model gemini-2.5-flash
                     chat_response = client.models.generate_content(
                         model='gemini-3.6-flash',
                         contents=f"{system_instruction}\n\nPertanyaan pelanggan: {prompt}",
