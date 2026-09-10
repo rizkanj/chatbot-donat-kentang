@@ -1,21 +1,14 @@
 import streamlit as st
 from google import genai
-from google.colab import userdata
 
 st.title("Chatbot Customer Service - Donat Kentang Premium")
 st.write("Halo! Ada yang bisa kami bantu seputar pesanan donat kentang hari ini?")
 
-# Ambil GEMINI_API_KEY dari Colab Secrets (ikon kunci di sebelah kiri)
+# Mengambil GEMINI_API_KEY dari Streamlit Secrets
 try:
-    gemini_api_key = userdata.get("GEMINI")
+    api_key = st.secrets["GEMINI_API_KEY"]
+    client = genai.Client(api_key=api_key)
 except Exception:
-    gemini_api_key = None
-
-# Inisialisasi client Gemini
-if gemini_api_key:
-    client = genai.Client(api_key=gemini_api_key)
-else:
-    # Fallback jika dijalankan tanpa Colab secrets (bisa diisi manual atau environment variable)
     client = None
 
 # Inisialisasi riwayat chat di session state
@@ -39,11 +32,10 @@ if prompt := st.chat_input("Tulis pertanyaanmu di sini..."):
         with st.spinner("Memikirkan jawaban..."):
             try:
                 if not client:
-                    response = "Maaf Kak, GEMINI belum diatur di Colab Secrets."
+                    response = "Maaf Kak, GEMINI_API_KEY belum dikonfigurasi di Streamlit Secrets."
                 else:
-                    # Mengirim prompt ke model gemini-2.5-flash
                     chat_response = client.models.generate_content(
-                        model='gemini-3.6-flash',
+                        model='gemini-2.5-flash',
                         contents=prompt,
                     )
                     response = chat_response.text
