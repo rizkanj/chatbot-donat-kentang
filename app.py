@@ -22,7 +22,22 @@ else:
 
 # Inisialisasi riwayat chat di session state
 if "messages" not in st.session_state:
-    st.session_state.messages = []
+    st.session_state.messages = [
+        {
+            "role": "assistant",
+            "content": (
+                "Halo! Selamat datang di layanan pelanggan Donat Kentang Premium. 🍩\n\n"
+                "Berikut adalah 3 menu utama kami:\n"
+                "1. **Donat Meses** - Rp 5.000/pcs\n"
+                "   *(Donat lembut dengan taburan meses dan berbagai pilihan topping)*\n"
+                "2. **Donat Creamy** - Rp 10.000/pcs\n"
+                "   *(Donat lembut dengan isian krim yang manis, creamy, dan lumer di mulut)*\n"
+                "3. **Donat Bomboloni** - Rp 7.000/pcs\n"
+                "   *(Donat lembut tanpa lubang dengan isian krim yang melimpah)*\n\n"
+                "Ada yang bisa saya bantu terkait pemesanan menu di atas, Kak?"
+            )
+        }
+    ]
 
 # Tampilkan pesan sebelumnya dari session state
 for message in st.session_state.messages:
@@ -30,22 +45,34 @@ for message in st.session_state.messages:
         st.markdown(message["content"])
 
 # Kotak input untuk user mengetik pesan
-if prompt := st.chat_input("Tulis pertanyaanmu di sini..."):
+if prompt := st.chat_input("Tulis pertanyaan atau pesananmu di sini..."):
     # Simpan dan tampilkan pesan dari user
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # Proses respons dari Gemini
+    # Proses respons dari Gemini dengan instruksi sistem agar fokus ke 3 menu tersebut
     with st.chat_message("assistant"):
         with st.spinner("Memikirkan jawaban..."):
             try:
                 if not client:
-                    response = "Maaf Kak, kunci API Gemini belum dikonfigurasi di Streamlit Secrets (pastikan namanya GEMINI atau GEMINI_API_KEY)."
+                    response = "Maaf Kak, kunci API Gemini belum dikonfigurasi di Streamlit Secrets."
                 else:
+                    # Instruksi sistem agar bot bertindak sebagai CS Donat Kentang dengan 3 menu spesifik
+                    system_instruction = (
+                        "Kamu adalah customer service ramah untuk toko 'Donat Kentang Premium'. "
+                        "Kamu HANYA menjual dan membahas 3 menu berikut:\n"
+                        "1. Donat Meses (Rp 5.000/pcs) - camilan lembut dengan taburan meses.\n"
+                        "2. Donat Creamy (Rp 10.000/pcs) - donat dengan isian krim lumer.\n"
+                        "3. Donat Bomboloni (Rp 7.000/pcs) - donat tanpa lubang dengan isian krim melimpah.\n"
+                        "Jika pelanggan bertanya di luar menu ini, arahkan dengan sopan kembali ke 3 menu tersebut. "
+                        "Bantu mereka mencatat pesanan, jumlah, atau menjawab pertanyaan seputar menu ini."
+                    )
+                    
+                    # Mengirim prompt beserta konteks sistem menggunakan model gemini-2.5-flash
                     chat_response = client.models.generate_content(
-                        model='gemini-3.6-flash',
-                        contents=prompt,
+                        model='gemini-2.5-flash',
+                        contents=f"{system_instruction}\n\nPertanyaan pelanggan: {prompt}",
                     )
                     response = chat_response.text
             except Exception as e:
