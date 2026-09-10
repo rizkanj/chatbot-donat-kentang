@@ -27,7 +27,7 @@ if "messages" not in st.session_state:
             "role": "assistant",
             "content": (
                 "Halo! Selamat datang di layanan pelanggan **Donat Kentang Premium** 🍩. "
-                "Kami memiliki cabang yang tersebar di seluruh Indonesia lho!\n\n"
+                "Kami memiliki cabang yang tersebar di seluruh Indonesia, termasuk di Kota Tangerang lho!\n\n"
                 "Ada yang bisa kami bantu hari ini? Apakah seputar info cabang terdekat, atau mau intip 3 menu spesial kami:\n"
                 "1. **Donat Meses** - Rp 5.000/pcs\n"
                 "2. **Donat Creamy** - Rp 10.000/pcs\n"
@@ -37,47 +37,61 @@ if "messages" not in st.session_state:
         }
     ]
 
-# Tampilkan pesan sebelumnya dari session state
+# Tampilkan pesan sebelumnya dari session state secara berurutan
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
 # Kotak input untuk user mengetik pesan
 if prompt := st.chat_input("Tulis pertanyaan atau pesananmu di sini..."):
-    # Simpan dan tampilkan pesan dari user
+    # 1. Simpan dan tampilkan pesan dari user terlebih dahulu
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # Proses respons dari Gemini dengan instruksi sistem yang lebih luwes
+    # 2. Proses respons dari Gemini dengan membawa riwayat percakapan
     with st.chat_message("assistant"):
         with st.spinner("Memikirkan jawaban..."):
             try:
                 if not client:
                     response = "Maaf Kak, kunci API Gemini belum dikonfigurasi di Streamlit Secrets."
                 else:
-                    # Instruksi sistem yang luwes: toko punya cabang di seluruh Indonesia dan fokus ke 3 menu
                     system_instruction = (
                         "Kamu adalah customer service ramah untuk toko 'Donat Kentang Premium'. "
-                        "Toko kita memiliki cabang yang tersebar di seluruh Indonesia. "
+                        "Toko kita memiliki cabang yang tersebar di seluruh Indonesia (termasuk Kota Tangerang). "
                         "Menu utama yang kita tawarkan ada 3: "
                         "1. Donat Meses (Rp 5.000/pcs), "
                         "2. Donat Creamy (Rp 10.000/pcs), "
                         "3. Donat Bomboloni (Rp 7.000/pcs). "
-                        "Jawab pertanyaan pelanggan dengan ramah, luwes, dan natural. "
-                        "Jika ditanya soal lokasi/cabang, jelaskan bahwa kita punya cabang di berbagai kota di seluruh Indonesia dan bantu arahkan mereka. "
-                        "Bantu juga mereka jika ingin memesan ketiga menu tersebut."
+                        "Jawab pertanyaan pelanggan dengan ramah, luwes, dan ingat konteks percakapan sebelumnya. "
+                        "Jangan mengulang-ngulang salam pembuka jika sudah disapa sebelumnya."
                     )
-                    
-                    chat_response = client.models.generate_content(
+
+                    # Ubah format riwayat pesan agar bisa dibaca oleh client.chats
+                    # (menggabungkan system instruction dengan history chat)
+                    formatted_history = []
+                    for msg in st.session_state.messages[:-1]: # Ambil riwayat sebelum pesan terakhir
+                        role_mapping = "user" if msg["role"] == "user" else "model"
+                        formatted_history.append({
+                            "role": role_mapping,
+                            "parts": [{"text": msg["content"]}]
+                        })
+
+                    # Mulai sesi chat dengan history yang tersimpan
+                    chat = client.chats.create(
                         model='gemini-3.6-flash',
-                        contents=f"{system_instruction}\n\nPertanyaan pelanggan: {prompt}",
+                        history=formatted_history,
+                        config={"system_instruction": system_instruction}
                     )
+
+                    # Kirim pesan terbaru dari user
+                    chat_response = chat.send_message(prompt)
                     response = chat_response.text
+
             except Exception as e:
                 response = f"Maaf Kak, terjadi kesalahan dalam memproses permintaan: {e}"
                 
             st.markdown(response)
             
-    # Simpan respons assistant ke riwayat chat
+    # 3. Simpan respons assistant ke riwayat chat
     st.session_state.messages.append({"role": "assistant", "content": response})
