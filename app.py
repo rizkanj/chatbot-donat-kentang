@@ -44,7 +44,7 @@ if prompt := st.chat_input("Tulis pertanyaanmu di sini..."):
                     response = "Maaf Kak, kunci API Gemini belum dikonfigurasi di Streamlit Secrets (pastikan namanya GEMINI atau GEMINI_API_KEY)."
                 else:
                     chat_response = client.models.generate_content(
-                        model='gemini-2.5-flash',
+                        model='gemini-3.6-flash',
                         contents=prompt,
                     )
                     response = chat_response.text
