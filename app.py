@@ -71,7 +71,7 @@ if prompt := st.chat_input("Tulis pertanyaan atau pesananmu di sini..."):
                     
                     # Mengirim prompt beserta konteks sistem menggunakan model gemini-2.5-flash
                     chat_response = client.models.generate_content(
-                        model='gemini-2.5-flash',
+                        model='gemini-3.6-flash',
                         contents=f"{system_instruction}\n\nPertanyaan pelanggan: {prompt}",
                     )
                     response = chat_response.text
