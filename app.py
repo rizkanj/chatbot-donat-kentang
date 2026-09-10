@@ -4,10 +4,14 @@ from google import genai
 st.title("Chatbot Customer Service - Donat Kentang Premium")
 st.write("Halo! Ada yang bisa kami bantu seputar pesanan donat kentang hari ini?")
 
-# Konfigurasi Client Gemini (Pastikan API Key sudah disetel di environment atau secrets)
-# client = genai.Client(api_key="MASUKKAN_API_KEY_KAMU_DISINI")
+# Mengambil GEMINI_API_KEY dari Streamlit Secrets
+try:
+    api_key = st.secrets["GEMINI_API_KEY"]
+    client = genai.Client(api_key=api_key)
+except Exception:
+    client = None
 
-# Inisialisasi riwayat chat
+# Inisialisasi riwayat chat di session state
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
@@ -23,20 +27,18 @@ if prompt := st.chat_input("Tulis pertanyaanmu di sini..."):
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # --- BAGIAN INTEGRASI LLM YANG KURANG ---
+    # Proses respons dari Gemini
     with st.chat_message("assistant"):
         with st.spinner("Memikirkan jawaban..."):
             try:
-                # Contoh pemanggilan model Gemini menggunakan client resmi
-                client = genai.Client() # Atau masukkan API key langsung
-                
-                # Mengirim riwayat percakapan atau prompt langsung ke model gemini-2.5-flash
-                # (Pastikan model yang dipakai sesuai dengan materi yang diajarkan)
-                chat_response = client.models.generate_content(
-                    model='gemini-2.5-flash',
-                    contents=prompt,
-                )
-                response = chat_response.text
+                if not client:
+                    response = "Maaf Kak, GEMINI_API_KEY belum dikonfigurasi di Streamlit Secrets."
+                else:
+                    chat_response = client.models.generate_content(
+                        model='gemini-2.5-flash',
+                        contents=prompt,
+                    )
+                    response = chat_response.text
             except Exception as e:
                 response = f"Maaf Kak, terjadi kesalahan dalam memproses permintaan: {e}"
                 
