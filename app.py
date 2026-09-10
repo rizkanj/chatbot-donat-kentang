@@ -49,43 +49,33 @@ if prompt := st.chat_input("Tulis pertanyaan atau pesananmu di sini..."):
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # 2. Proses respons dari Gemini dengan membawa riwayat percakapan
+    # 2. Proses respons dari Gemini
     with st.chat_message("assistant"):
         with st.spinner("Memikirkan jawaban..."):
             try:
                 if not client:
                     response = "Maaf Kak, kunci API Gemini belum dikonfigurasi di Streamlit Secrets."
                 else:
-                    system_instruction = (
-                        "Kamu adalah customer service ramah untuk toko 'Donat Kentang Premium'. "
-                        "Toko kita memiliki cabang yang tersebar di seluruh Indonesia (termasuk Kota Tangerang). "
-                        "Menu utama yang kita tawarkan ada 3: "
-                        "1. Donat Meses (Rp 5.000/pcs), "
-                        "2. Donat Creamy (Rp 10.000/pcs), "
-                        "3. Donat Bomboloni (Rp 7.000/pcs). "
-                        "Jawab pertanyaan pelanggan dengan ramah, luwes, dan ingat konteks percakapan sebelumnya. "
-                        "Jangan mengulang-ngulang salam pembuka jika sudah disapa sebelumnya."
-                    )
+                    # Susun riwayat chat dan sisipkan instruksi karakter CS di awal
+                    contents_payload = [
+                        (
+                            "Aturan peran: Kamu adalah customer service ramah untuk toko 'Donat Kentang Premium'. "
+                            "Toko kita memiliki cabang di seluruh Indonesia (termasuk Tangerang). "
+                            "Menu utama kita hanya ada 3: Donat Meses (Rp 5.000/pcs), Donat Creamy (Rp 10.000/pcs), "
+                            "dan Donat Bomboloni (Rp 7.000/pcs). Jawablah dengan ramah, luwes, dan ingat konteks sebelumnya."
+                        )
+                    ]
+                    
+                    # Masukkan seluruh riwayat obrolan sebelumnya
+                    for msg in st.session_state.messages:
+                        prefix = "User: " if msg["role"] == "user" else "Assistant: "
+                        contents_payload.append(prefix + msg["content"])
 
-                    # Ubah format riwayat pesan agar bisa dibaca oleh client.chats
-                    # (menggabungkan system instruction dengan history chat)
-                    formatted_history = []
-                    for msg in st.session_state.messages[:-1]: # Ambil riwayat sebelum pesan terakhir
-                        role_mapping = "user" if msg["role"] == "user" else "model"
-                        formatted_history.append({
-                            "role": role_mapping,
-                            "parts": [{"text": msg["content"]}]
-                        })
-
-                    # Mulai sesi chat dengan history yang tersimpan
-                    chat = client.chats.create(
+                    # Kirim payload lengkap ke model
+                    chat_response = client.models.generate_content(
                         model='gemini-3.6-flash',
-                        history=formatted_history,
-                        config={"system_instruction": system_instruction}
+                        contents=contents_payload,
                     )
-
-                    # Kirim pesan terbaru dari user
-                    chat_response = chat.send_message(prompt)
                     response = chat_response.text
 
             except Exception as e:
