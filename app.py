@@ -1,4 +1,3 @@
-%%writefile chatbot_donat.py
 import streamlit as st
 from google import genai
 from google.colab import userdata
